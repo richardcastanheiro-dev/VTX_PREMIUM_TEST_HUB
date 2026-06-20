@@ -202,16 +202,79 @@ rs.GrabEvents.ExtendGrabLine.OnClientEvent:Connect(function(...)
         end
     end
 end)
-Window = Library:CreateWindow({
-    SidebarCompacted = false,
-    SearchbarSize = UDim2.fromScale(0.5, 1),
-    Title = 'VTX_Hub',
-    Footer = 'version: 1.7',
+local Window = Library:CreateWindow({
+    Title = "VTX Hub",
+    Footer = 'version: 2.0',
     Icon = 127990091575711,
-    IconSize = UDim2.fromOffset(40, 40),
-    SidebarCompactWidth = 50,
-    CornerRadius = 13,
-    BackgroundImage = "rbxassetid://0"
+    Center = true,
+    AutoShow = true
+})
+
+local HomeTab = Window:AddTab("Home")
+local LeftGroup = HomeTab:AddLeftGroupbox("Greetings")
+local RightGroup = HomeTab:AddRightGroupbox("Statistics")
+
+
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+
+
+LeftGroup:AddLabel("Evening, " .. player.Name)
+LeftGroup:AddDivider()
+LeftGroup:AddLabel("Welcome to VTX Hub")
+LeftGroup:AddLabel("Maintained and developed by Snow")
+LeftGroup:AddLabel("Thanks for buying! Your license is lifetime")
+
+
+LeftGroup:AddDivider()
+LeftGroup:AddLabel("Owner: InthewordSnow1")
+LeftGroup:AddLabel("Helper: Richardcasta1")
+LeftGroup:AddLabel("Beta Tester: VTX_Hd")
+LeftGroup:AddLabel("Beta Tester: VTX_Nether")
+
+
+local ProfileBox = HomeTab:AddLeftGroupbox("Profile")
+
+ProfileBox:AddLabel("Name: " .. player.Name)
+ProfileBox:AddLabel("Display: " .. player.DisplayName)
+ProfileBox:AddLabel("User ID: " .. player.UserId)
+ProfileBox:AddDivider()
+ProfileBox:AddLabel("Rank: Premium User")
+ProfileBox:AddLabel("License: Lifetime")
+ProfileBox:AddLabel("Status: Online")
+
+
+local elapsedTime = 0
+local kickedPlayers = 0
+
+local ElapsedLabel = RightGroup:AddLabel("Elapsed time: " .. elapsedTime .. " seconds")
+local KickedLabel = RightGroup:AddLabel("Kicked players: " .. kickedPlayers)
+
+RightGroup:AddDivider()
+RightGroup:AddLabel("Current time: " .. os.date("%H:%M"))
+RightGroup:AddLabel("Script version: v2.0")
+
+
+task.spawn(function()
+    while task.wait(1) do
+        elapsedTime += 1
+        ElapsedLabel:Set("Elapsed time: " .. elapsedTime .. " seconds")
+    end
+end)
+
+
+RightGroup:AddButton({
+    Text = "Unload Script",
+    Func = function()
+        Library:Unload()
+    end
+})
+
+RightGroup:AddButton({
+    Text = "Rejoin",
+    Func = function()
+        game:GetService("TeleportService"):Teleport(game.PlaceId)
+    end
 })
 
 
@@ -223,7 +286,7 @@ local Tabs = {
     Server = Window:AddTab("Server"),
     Keybinds = Window:AddTab("Keybinds"),
     Whitelist = Window:AddTab("Whitelist"),
-    Blacklist = Window:AddTab("Blacklist"), -- ← Adicionado,
+    Blacklist = Window:AddTab("Blacklist"), 
     Notify = Window:AddTab("Notify"),
 	["UI Settings"]  = Window:AddTab("UI Settings"),
 }
@@ -344,91 +407,86 @@ box:AddSlider("PCLDTransparency", {
 })
 
 box:AddToggle("ViewPCLD", {
-    Text = "View PCLD(off>>on to update)",
+    Text = "View PCLD (Bordas Rainbow)",
     Default = false,
     Callback = function(v)
         if v then
-            local trans = Options.PCLDTransparency.Value
-            for i,v in pairs(workspace:GetChildren()) do
-                if v.Name == "PlayerCharacterLocationDetector" then
-                    v.Transparency = trans
+            local trans = Options.PCLDTransparency.Value or 0.8
+            
+            local activePCLDs = {}
+            local adornments = {}  -- Para guardar as bordas
+            
+            local function AddBorders(obj)
+                if obj.Name == "PlayerCharacterLocationDetector" and obj:IsA("BasePart") then
+                    -- Deixa o part quase invisível
+                    obj.Transparency = 1
+                    obj.Material = Enum.Material.SmoothPlastic
+                    
+                    -- Cria bordas coloridas
+                    local selection = Instance.new("SelectionBox")
+                    selection.Name = "PCLD_Borders"
+                    selection.Adornee = obj
+                    selection.LineThickness = 0.05
+                    selection.Transparency = trans
+                    selection.Color3 = Color3.fromRGB(255, 0, 255)
+                    selection.Parent = obj
+                    
+                    table.insert(activePCLDs, obj)
+                    table.insert(adornments, selection)
                 end
             end
+
+            -- Aplicar nos existentes
+            for _, v in pairs(workspace:GetChildren()) do
+                AddBorders(v)
+            end
+
+            -- Novos PCLDs
             cons["viewpcld"] = workspace.ChildAdded:Connect(function(child)
-                if child.Name == "PlayerCharacterLocationDetector" then
-                    child.Transparency = trans
+                AddBorders(child)
+            end)
+
+            -- === EFEITO ARCO-ÍRIS NAS BORDAS ===
+            local RunService = game:GetService("RunService")
+            local hue = 0
+
+            cons["rainbow"] = RunService.Heartbeat:Connect(function()
+                hue = (hue + 0.018) % 1
+                
+                local color = Color3.fromHSV(hue, 1, 1)
+                
+                for i = #adornments, 1, -1 do
+                    local sb = adornments[i]
+                    if sb and sb.Parent then
+                        sb.Color3 = color
+                    else
+                        table.remove(adornments, i)
+                    end
                 end
             end)
+
         else
-            if cons["viewpcld"] then cons["viewpcld"]:Disconnect() cons["viewpcld"] = nil end
-            for i,v in pairs(workspace:GetChildren()) do
+            -- Desligar
+            if cons["viewpcld"] then 
+                cons["viewpcld"]:Disconnect() 
+                cons["viewpcld"] = nil 
+            end
+            if cons["rainbow"] then 
+                cons["rainbow"]:Disconnect() 
+                cons["rainbow"] = nil 
+            end
+
+            -- Limpar bordas
+            for _, v in pairs(workspace:GetChildren()) do
                 if v.Name == "PlayerCharacterLocationDetector" then
                     v.Transparency = 1
+                    local border = v:FindFirstChild("PCLD_Borders")
+                    if border then border:Destroy() end
                 end
             end
         end
     end
 })
-local Players = game:GetService("Players")
-
-local function AddESP(plr)
-    if plr == Players.LocalPlayer then return end
-
-    local function Apply(char)
-        if char:FindFirstChild("VTX_ESP") then return end
-
-        
-        local hl = Instance.new("Highlight")
-        hl.Name = "VTX_ESP"
-        hl.FillTransparency = 1
-        hl.OutlineTransparency = 0
-        hl.OutlineColor = Color3.fromRGB(255,255,255)
-        hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-        hl.Parent = char
-
-        
-        local head = char:FindFirstChild("Head")
-        if head then
-            local bill = Instance.new("BillboardGui")
-            bill.Name = "VTX_NameESP"
-            bill.Size = UDim2.new(0, 200, 0, 40)
-            bill.StudsOffset = Vector3.new(0, 2.5, 0)
-            bill.AlwaysOnTop = true
-            bill.Parent = head
-
-            local txt = Instance.new("TextLabel")
-            txt.Size = UDim2.new(0.5, 0, 0.5, 0)
-            txt.BackgroundTransparency = 1
-            txt.Text = plr.Name
-            txt.TextColor3 = Color3.fromRGB(255,255,255)
-            txt.TextStrokeTransparency = 0
-            txt.TextScaled = true
-            txt.Font = Enum.Font.SourceSansBold
-            txt.Parent = bill
-        end
-    end
-
-    if plr.Character then
-        Apply(plr.Character)
-    end
-
-    plr.CharacterAdded:Connect(Apply)
-end
-
-local function RemoveESP()
-    for _, plr in ipairs(Players:GetPlayers()) do
-        if plr.Character then
-            local esp = plr.Character:FindFirstChild("VTX_ESP")
-            if esp then esp:Destroy() end
-
-            local head = plr.Character:FindFirstChild("Head")
-            if head then
-                local nameesp = head:FindFirstChild("VTX_NameESP")
-                if nameesp then nameesp:Destroy() end
-            end
-        end
-    end
-end
 box:AddToggle("PlayerESP", {
     Text = "Player ESP",
     Default = false,
@@ -746,19 +804,13 @@ box:AddToggle("AntiGrab",{
 
 
 
--- ===============================
--- Lunar Hub • KICK NOTIFY
--- ===============================
-
 local SoundService = game:GetService("SoundService")
 
 
--- ===============================
--- SOUND (BELL)
--- ===============================
+
 local function playKickSound()
 	local s = Instance.new("Sound")
-	s.SoundId = "rbxassetid://97643101798871" -- Bell (Reso kick bell)
+	s.SoundId = "rbxassetid://97643101798871" 
 	s.Volume = 3
 	s.PlayOnRemove = true
 	s.Parent = SoundService
@@ -766,12 +818,9 @@ local function playKickSound()
 end
 
 
--- ===============================
--- NOTIFY (Lunar Hub)
--- ===============================
 local function notifyKick(displayName, username)
 	Library:Notify({
-		Title = "VTX HUB",
+		Title = "VTX Hub",
 		Description = displayName .. " (" .. username .. ") has been kicked",
 		Time = 6,
 	})
@@ -780,9 +829,8 @@ end
 
 
 
--- ===============================
--- HELPERS
--- ===============================
+
+
 local function getClosestPlayer(pos)
 	local closestPlr = nil
 	local closestDist = math.huge
@@ -801,9 +849,7 @@ local function getClosestPlayer(pos)
 	return closestPlr
 end
 
--- ===============================
--- BLACK HOLE DETECT
--- ===============================
+
 Workspace.ChildAdded:Connect(function(obj)
 	if obj.Name == "BlackHoleKick" or obj.Name == "BlackHoleDetected" then
 		task.wait(0.05)
@@ -1456,7 +1502,7 @@ box:AddToggle("AutoGucciBlob", {
                     end)
                 end)
                 if inv:FindFirstChild("autogucci") then DestroyToy:FireServer(inv.autogucci) end
-                blobb = spawntoy("CreatureBlobman", HRP.CFrame * CFrame.new(5, -5, 20))
+                blobb = spawntoy("CreatureBlobman", HRP.CFrame * CFrame.new(5, 5, 20))
                 repeat task.wait() until blobb
                 blobb.Name = "autogucci"
                 blobb:WaitForChild("VehicleSeat", 3):Sit(plr.Character.Humanoid)
@@ -1579,6 +1625,7 @@ box:AddToggle("AntiKill", {
         end
     end
 })
+
 box:AddToggle("AntiKick", {
     Text = "Anti Kick",
     CurrentValue = false,
@@ -1639,7 +1686,7 @@ box:AddToggle("AntiKick", {
                     stickyEvent:FireServer(
                         kunai.StickyPart,
                         currentHRP:FindFirstChild("FirePlayerPart") or currentHRP:WaitForChild("FirePlayerPart"),
-                        CFrame.new(10,-15,0) * CFrame.Angles(0,math.rad(90),math.rad(90))
+                        CFrame.new(0,0,0) * CFrame.Angles(0,math.rad(90),math.rad(90))
                     )
                     
                     for _, obj in pairs(kunai:GetChildren()) do
@@ -1649,7 +1696,7 @@ box:AddToggle("AntiKick", {
                             obj.CanQuery = false
                             obj.Transparency = 0
                             local high = Instance.new("Highlight")
-                            high.FillColor = Color3.fromRGB(0, 0, 0)
+                            high.FillColor = Color3.fromRGB(255, 0, 0)
                             high.Parent = obj
 
                         elseif obj.Name == "Main" then
@@ -1688,7 +1735,7 @@ box:AddToggle("AntiKick", {
                     task.spawn(function()
                         game.ReplicatedStorage.MenuToys.SpawnToyRemoteFunction:InvokeServer(
                             name,
-                            currentHRP.CFrame * CFrame.new(0, 10, 20),
+                            currentHRP.CFrame * CFrame.new(0, 15, 20),
                             Vector3.new(1,5,0)
                         )
                     end)
@@ -1704,7 +1751,7 @@ box:AddToggle("AntiKick", {
                 end
 
                 while getgenv().AntiKickEnabled do 
-                    task.wait(0.005)
+                    task.wait(0.1)
 
                     if not plr.Character or not plr.Character:FindFirstChild("Humanoid") or plr.Character.Humanoid.Health <= 0 then 
                         continue 
@@ -1735,7 +1782,7 @@ box:AddToggle("AntiKick", {
                             StickKunai(kunai)
                             kunai.Name = "AntiKick"
                         end
-                        wait(0.3)
+                        wait(0.1)
                     until not kunai or not getgenv().AntiKickEnabled 
                         or not kunai:FindFirstChild("StickyPart")
                         or kunai.StickyPart.CanTouch == false 
@@ -1749,7 +1796,7 @@ box:AddToggle("AntiKick", {
                     
                     pcall(function()
                         repeat
-                            wait(0.05)
+                            wait(0.1)
                         until not getgenv().AntiKickEnabled or not plr.Character or not plr.Character:FindFirstChild("Humanoid") or not kunai or not kunai:FindFirstChild("StickyPart") or not kunai.StickyPart:FindFirstChild("StickyWeld") or not kunai.StickyPart.StickyWeld.Part1
                         
                         if not kunai or not kunai:FindFirstChild("StickyPart") or (plr.Character and plr.Character:FindFirstChild("Humanoid") and plr.Character.Humanoid.Health <= 0) or not kunai["StickyPart"]:FindFirstChild("StickyWeld").Part1 then 
@@ -1761,6 +1808,192 @@ box:AddToggle("AntiKick", {
         end
     end,
 })
+box:AddToggle("AntiKick", {
+    Text = "Anti Kick (Anti Remove)",
+    CurrentValue = false,
+    Flag = "AntiKickToggle",
+    Callback = function(Value)
+        getgenv().AntiKickEnabled = Value
+        
+        if Value then
+            task.spawn(function()
+                local plr = game.Players.LocalPlayer
+                local inv = workspace[plr.Name.."SpawnedInToys"]
+                local hrp
+
+                local setOwner = game.ReplicatedStorage:WaitForChild("GrabEvents"):WaitForChild("SetNetworkOwner")
+                local stickyEvent = game.ReplicatedStorage:WaitForChild("PlayerEvents"):WaitForChild("StickyPartEvent")
+                local destroyrem = game.ReplicatedStorage:WaitForChild("MenuToys"):WaitForChild("DestroyToy")
+                local canSpawn = plr:WaitForChild("CanSpawnToy")
+
+                
+                local FIXED_SPAWN = CFrame.new(-539.21, 2.28, 99.30)
+
+                local function getHRP()
+                    if plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+                        return plr.Character.HumanoidRootPart
+                    else
+                        local character = plr.CharacterAdded:Wait()
+                        return character:WaitForChild("HumanoidRootPart")
+                    end
+                end
+
+                local function CheckForHome()
+                    local ToyFolder
+                    if not workspace.PlotItems.PlayersInPlots:FindFirstChild(plr.Name) then 
+                        return false
+                    end
+                    for _, v in pairs(workspace.Plots:GetChildren()) do
+                        for _, b in pairs(v.PlotSign.ThisPlotsOwners:GetChildren()) do
+                            if b.Value == plr.Name then
+                                ToyFolder = workspace.PlotItems[v.Name]
+                            end
+                        end
+                    end
+                    if ToyFolder then 
+                        return true, ToyFolder
+                    else 
+                        return false
+                    end
+                end
+
+                local function StickKunai(kunai)
+                    if not kunai or not kunai:FindFirstChild("StickyPart") then return end
+
+                    local currentHRP = getHRP()
+                    
+                    if kunai:FindFirstChild("SoundPart") then
+                        if not kunai["SoundPart"]:FindFirstChild("PartOwner") or kunai["SoundPart"].PartOwner.Value ~= plr.Name then 
+                            setOwner:FireServer(kunai.SoundPart, kunai.SoundPart.CFrame)
+                        end
+                    end
+                    
+                    stickyEvent:FireServer(
+                        kunai.StickyPart,
+                        currentHRP:FindFirstChild("FirePlayerPart") or currentHRP:WaitForChild("FirePlayerPart"),
+                        CFrame.new(0,0,0) * CFrame.Angles(0,math.rad(90),math.rad(90))
+                    )
+                    
+                    for _, obj in pairs(kunai:GetChildren()) do
+                        if obj.Name == "Pyramid" then
+                            obj.CanTouch = false
+                            obj.CanCollide = false
+                            obj.CanQuery = false
+                            obj.Transparency = 0
+                            local high = Instance.new("Highlight")
+                            high.FillColor = Color3.fromRGB(255, 0, 0)
+                            high.Parent = obj
+
+                        elseif obj.Name == "Main" then
+                            obj.CanTouch = false
+                            obj.CanCollide = false
+                            obj.CanQuery = false
+                            obj.Transparency = 0
+                            local high = Instance.new("Highlight")
+                            high.FillColor = Color3.fromRGB(255, 255, 255)
+                            high.Parent = obj
+
+                        elseif obj:IsA("BasePart") then
+                            obj.CanTouch = false
+                            obj.CanCollide = false
+                            obj.CanQuery = false
+                            obj.Transparency = 1
+                        end
+                    end
+                end
+
+                local function ClearKunai()
+                    for _,v in pairs(inv:GetChildren()) do
+                        if v.Name == "AntiKick" then
+                            destroyrem:FireServer(v)
+                        end
+                    end
+                end
+
+                local function SpawnToy(name)
+                    while not canSpawn.Value do
+                        canSpawn.Changed:Wait()
+                    end
+
+                    local currentHRP = getHRP()
+                    
+                    task.spawn(function()
+                        game.ReplicatedStorage.MenuToys.SpawnToyRemoteFunction:InvokeServer(
+                            name,
+                            FIXED_SPAWN,           
+                            Vector3.new(1,5,0)
+                        )
+                    end)
+                    
+                    local boolik, house = CheckForHome()
+                    if boolik then 
+                        return house:WaitForChild(name, 2)
+                    elseif not workspace.PlotItems.PlayersInPlots:FindFirstChild(plr.Name) then 
+                        return inv:WaitForChild(name, 2)
+                    elseif workspace.PlotItems.PlayersInPlots:FindFirstChild(plr.Name) and not boolik then 
+                        return nil
+                    end
+                end
+
+                while getgenv().AntiKickEnabled do 
+                    task.wait(0.1)
+
+                    if not plr.Character or not plr.Character:FindFirstChild("Humanoid") or plr.Character.Humanoid.Health <= 0 then 
+                        continue 
+                    end
+                    
+                    local kunai = inv:FindFirstChild("NinjaShuriken")
+                    
+                    if workspace.PlotItems.PlayersInPlots:FindFirstChild(plr.Name) then 
+                        local boolik, house = CheckForHome()
+                        if boolik and house and workspace.Plots:FindFirstChild(house.Name) and workspace.Plots:FindFirstChild(house.Name)["PlotSign"]["ThisPlotsOwners"]:FindFirstChild("Value") and workspace.Plots:FindFirstChild(house.Name)["PlotSign"]["ThisPlotsOwners"]["Value"]["TimeRemainingNum"].Value > 89 then 
+                            kunai = SpawnToy("NinjaShuriken")
+                            if kunai == nil then continue end
+                            kunai.Name = "AntiKick" 
+                            StickKunai(kunai)
+                        end
+                    end
+                    
+                    if not kunai then
+                        if workspace.PlotItems.PlayersInPlots:FindFirstChild(plr.Name) then continue end 
+                        kunai = SpawnToy("NinjaShuriken")
+                        if kunai == nil then continue end 
+                        kunai.Name = "AntiKick"
+                        if not kunai then continue end 
+                    end
+                    
+                    repeat
+                        if kunai and kunai:FindFirstChild("StickyPart") and kunai.StickyPart.CanTouch == true then
+                            StickKunai(kunai)
+                            kunai.Name = "AntiKick"
+                        end
+                        wait(0.1)
+                    until not kunai or not getgenv().AntiKickEnabled 
+                        or not kunai:FindFirstChild("StickyPart")
+                        or kunai.StickyPart.CanTouch == false 
+                        or not plr.Character or not plr.Character:FindFirstChild("HumanoidRootPart") 
+                        or not kunai:FindFirstChild("StickyPart") 
+                        or (plr.Character.HumanoidRootPart.Position - kunai.StickyPart.Position).Magnitude >= 20
+
+                    if not kunai or not kunai:FindFirstChild("StickyPart") or not plr.Character or not plr.Character:FindFirstChild("HumanoidRootPart") or (plr.Character.HumanoidRootPart.Position - kunai.StickyPart.Position).Magnitude >= 20 then 
+                        ClearKunai()
+                    end 
+                    
+                    pcall(function()
+                        repeat
+                            wait(0.1)
+                        until not getgenv().AntiKickEnabled or not plr.Character or not plr.Character:FindFirstChild("Humanoid") or not kunai or not kunai:FindFirstChild("StickyPart") or not kunai.StickyPart:FindFirstChild("StickyWeld") or not kunai.StickyPart.StickyWeld.Part1
+                        
+                        if not kunai or not kunai:FindFirstChild("StickyPart") or (plr.Character and plr.Character:FindFirstChild("Humanoid") and plr.Character.Humanoid.Health <= 0) or not kunai["StickyPart"]:FindFirstChild("StickyWeld").Part1 then 
+                            ClearKunai()
+                        end
+                    end)
+                end
+            end)
+        end
+    end,
+})
+
 box:AddToggle("LoopTp", {
     Text = "Loop Tp",
     Default = false,
@@ -3316,6 +3549,7 @@ box:AddToggle("ApplyMethodGrab", {
     end
 })
 
+
 do
     box:AddToggle("LoopKickBlob", {
         Text = "Loop Kick (Grab + Blob)",
@@ -3773,7 +4007,7 @@ box:AddToggle("LineLag", {
             task.spawn(function()
                 while linelag do
                     for i=1, lps do
-                        CreateLine:FireServer(workspace.SpawnLocation, CFrame.new(0, 99, 0))
+                        CreateLine:FireServer(workspace.SpawnLocation, CFrame.new(0, 9e9, 0))
                     end
                     task.wait(1)
                 end
@@ -4395,20 +4629,8 @@ box:AddButton("Destroy Server(Need Blobman)", function()
     blob.HumanoidRootPart.Anchored = false
     DestroyToy:FireServer(inv.blob)
 end)
-do
-local toggle
-toggle = box:AddToggle("Whitelist", {
-    Text = "Enable Whitelist",
-    Default = false,
-})
 
-toggle:OnChanged(function(v)
-    local val = v and "Disable" or not v and "Enable"
-    toggle:SetText(val.." Whitelist")
-    WhitelistEnabled = v
-end)
 
-end
 
 
 
