@@ -315,23 +315,31 @@ local box = Tabs.Visual:AddRightGroupbox("Misc")
 Window:SetCornerRadius(20)
 Library.ShowCustomCursor = true
 
-local watermark = Library:AddDraggableLabel("VTX HUB | 0 FPS | 0 ms")
+local watermark = Library:AddDraggableLabel("VTX HUB | 00:00:00 | 0 FPS | 0 ms")
+
+local RunService = game:GetService("RunService")
+local Stats = game:GetService("Stats")
 
 task.spawn(function()
     while task.wait(0.5) do
-        local fps = math.floor(1 / game:GetService("RunService").RenderStepped:Wait())
+        local fps = math.floor(1 / RunService.RenderStepped:Wait())
 
         local ping = 0
         pcall(function()
             ping = math.floor(
-                game:GetService("Stats")
-                    .Network.ServerStatsItem["Data Ping"]
-                    :GetValue()
+                Stats.Network.ServerStatsItem["Data Ping"]:GetValue()
             )
         end)
 
+        local horario = os.date("%H:%M:%S")
+
         watermark:SetText(
-            string.format("VTX HUB | %d FPS | %d ms", fps, ping)
+            string.format(
+                "VTX HUB | %s | %d FPS | %d ms",
+                horario,
+                fps,
+                ping
+            )
         )
     end
 end)
@@ -822,10 +830,9 @@ local function notifyKick(displayName, username)
 	Library:Notify({
 		Title = "VTX Hub",
 		Description = displayName .. " (" .. username .. ") has been kicked",
-		Time = 6,
-	})
+		Time = 4,
+})
 end
-
 
 
 
@@ -1173,7 +1180,7 @@ box:AddToggle("AutoReset", {
     Default = false,
     Callback = function(v)
         if v then
-            cons["AutoReset"] = rs.GameCorrectionEvents.GameCorrectionsNotify.OnClientEvent:Connect(function(r)
+            cons["Auto Reset Running"] = rs.GameCorrectionEvents.GameCorrectionsNotify.OnClientEvent:Connect(function(r)
                 if r == "Flying" then
                     Library:Notify("Reset", 4)
                     hum:ChangeState("Dead")
