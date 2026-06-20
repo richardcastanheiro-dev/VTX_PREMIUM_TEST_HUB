@@ -3408,27 +3408,27 @@ box:AddToggle("ApplyMethodGrab", {
                                 RunService.RenderStepped:Wait()
                                 SetNetOwner:FireServer(Sets.HRP, Sets.HRP.CFrame)
                                 if (Sets.HRP.Position - HRP.Position).Magnitude >= 50 and Sets.Char.Parent == workspace then
-                                    task.wait(0.1,5)
+                                    task.wait(0.1,4)
                                     tp(HRP, Sets.HRP)
                                     task.wait(0.2)
                                     sno(Sets.HRP)
-                                    task.wait(0.1,5)
+                                    task.wait(0.1,4)
                                     HRP.CFrame = pos
-                                    task.wait(0.1,5)
+                                    task.wait(0.1,6)
                                     for i,v in pairs(Sets.Char:GetChildren()) do
                                         if v:IsA("Part") and v.Name ~= "Humanoid" then
                                             v.CFrame = pos * offset
                                         end
                                     end
                                 end
-                                if Sets.HRP.Position.Y < HRP.Position.Y + 4 and Sets.Char.Parent == workspace then
+                                if Sets.HRP.Position.Y < HRP.Position.Y + 5 and Sets.Char.Parent == workspace then
                                     repeat task.wait() sno(Sets.HRP) until Sets.Char.Head:FindFirstChild("PartOwner")
                                     HRP.CFrame = pos
                                     Sets.HRP.CFrame = HRP.CFrame * offset
                                 end
                                 task.spawn(function()
                                     if Toggles.EnableRagdoll.Value and PalletForRagdoll and inv:FindFirstChild("PalletForRagdoll") then
-                                        PalletForRagdoll.SoundPart.AssemblyLinearVelocity = Vector3.new(0, 2000, 0)
+                                        PalletForRagdoll.SoundPart.AssemblyLinearVelocity = Vector3.new(0, 2100, 0)
                                         PalletForRagdoll.SoundPart.CFrame = Sets.HRP.CFrame
                                         task.wait(0.0)
                                         PalletForRagdoll.SoundPart.CFrame = HRP.CFrame * CFrame.new(0, 2000, 0)
@@ -3445,7 +3445,7 @@ box:AddToggle("ApplyMethodGrab", {
                                     kickbg = Instance.new("BodyGyro")
                                     kickbg.Parent = Sets.HRP
                                     kickbg.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
-                                    kickbp.D = 500
+                                    kickbp.D = 450
                                     kickbg.CFrame = CFrame.new(0, 13, 0)
                                 end
                                 task.spawn(function()
@@ -3466,7 +3466,7 @@ box:AddToggle("ApplyMethodGrab", {
                                     task.wait(0.0)
                                     repeat task.wait() sno(Sets.HRP) until Sets.Char.Head:FindFirstChild("PartOwner")
                                     HRP.CFrame = pos
-                                    Sets.HRP.CFrame = HRP.CFrame * CFrame.new(1,13,0)
+                                    Sets.HRP.CFrame = HRP.CFrame * CFrame.new(1,11,0)
                                 end
                                 task.spawn(function()
                                     if Toggles.EnableRagdoll.Value and PalletForRagdoll and inv:FindFirstChild("PalletForRagdoll") then
@@ -3483,20 +3483,20 @@ box:AddToggle("ApplyMethodGrab", {
                             end
                         elseif Method == "Loop Grab" then
                             if Sets.HRP and hum and HRP and Sets.Char.Parent == workspace then
-                                if (Sets.HRP.Position - HRP.Position).Magnitude > 45 then
+                                if (Sets.HRP.Position - HRP.Position).Magnitude > 35 then
                                     stvel(HRP)
-                                    HRP.CFrame = Sets.HRP.CFrame * CFrame.new(0,0,5)
+                                    HRP.CFrame = Sets.HRP.CFrame * CFrame.new(0,2,5)
                                     task.wait(0.0)
                                     repeat task.wait() sno(Sets.HRP) until Sets.Char.Head:FindFirstChild("PartOwner")
                                     HRP.CFrame = pos
-                                    Sets.HRP.CFrame = HRP.CFrame * CFrame.new(1,13,0)
+                                    Sets.HRP.CFrame = HRP.CFrame * CFrame.new(1,11,0)
                                 end
                                 task.spawn(function()
                                     if Toggles.EnableRagdoll.Value and PalletForRagdoll and inv:FindFirstChild("PalletForRagdoll") then
-                                        PalletForRagdoll.SoundPart.AssemblyLinearVelocity = Vector3.new(1, 13, 0)
+                                        PalletForRagdoll.SoundPart.AssemblyLinearVelocity = Vector3.new(1, 11, 0)
                                         PalletForRagdoll.SoundPart.CFrame = Sets.HRP.CFrame
                                         task.wait(0.0)
-                                        PalletForRagdoll.SoundPart.CFrame = HRP.CFrame * CFrame.new(1, 13, 0)
+                                        PalletForRagdoll.SoundPart.CFrame = HRP.CFrame * CFrame.new(1, 11, 0)
                                     end
                                 end)
                                 if Sets.Char.Head:FindFirstChild("PartOwner") then
@@ -3524,7 +3524,7 @@ box:AddToggle("ApplyMethodGrab", {
                                     Sets.HRP.CFrame = pos * offset
                                     HRP.CFrame = pos
                                     DestroyToy:FireServer(inv:FindFirstChild("cringe"))
-                                    task.wait(0.3)
+                                    task.wait(0.2)
                                 end
                             end
                             if Sets.HRP and hum and HRP and Sets.Char.Parent == workspace and Sets.Char.Humanoid.Health ~= 0 and Sets.Char.Torso:FindFirstChild("Neck") then
