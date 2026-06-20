@@ -771,7 +771,7 @@ end
 -- ===============================
 local function notifyKick(displayName, username)
 	Library:Notify({
-		Title = "Lunar Hub",
+		Title = "VTX HUB",
 		Description = displayName .. " (" .. username .. ") has been kicked",
 		Time = 6,
 	})
