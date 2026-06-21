@@ -243,13 +243,42 @@ ProfileBox:AddLabel("Rank: Premium User")
 ProfileBox:AddLabel("License: Lifetime")
 ProfileBox:AddLabel("Status: Online")
 
-
 local elapsedTime = 0
+local ElapsedLabel = RightGroup:AddLabel("Elapsed time: 0 seconds")
+
+task.spawn(function()
+    while task.wait(1) do
+        elapsedTime += 1
+
+        if ElapsedLabel and ElapsedLabel.SetText then
+            ElapsedLabel:SetText("Elapsed time: " .. elapsedTime .. " seconds")
+        end
+    end
+end)
+
+
+local Players = game:GetService("Players")
+
+local Players = game:GetService("Players")
+
 local kickedPlayers = 0
+local label = RightGroup:AddLabel("Kicks: 0")
 
-local ElapsedLabel = RightGroup:AddLabel("Elapsed time: " .. elapsedTime .. " seconds")
-local KickedLabel = RightGroup:AddLabel("Kicked players: " .. kickedPlayers)
+Players.PlayerRemoving:Connect(function(player)
+    kickedPlayers += 1
+    label:SetText("Kicks: " .. kickedPlayers)
+end)
 
+
+
+Players.PlayerRemoving:Connect(function(player)
+    kickedPlayers += 1
+    print(player.Name .. " saiu. Total de kicks: " .. kickedPlayers)
+end)
+
+
+
+RightGroup:AddDivider()
 RightGroup:AddDivider()
 RightGroup:AddLabel("Current time: " .. os.date("%H:%M"))
 RightGroup:AddLabel("Script version: v2.0")
