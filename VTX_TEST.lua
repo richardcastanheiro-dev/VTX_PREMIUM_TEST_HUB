@@ -538,6 +538,10 @@ box:AddToggle("PlayerESP", {
     end
 })
 end
+
+
+
+ 
 local box = Tabs.Visual:AddRightGroupbox("Map Loader")
 
 local AimTrainerMap = nil
@@ -787,7 +791,196 @@ box:AddToggle("MovingR6Bot", {
         end
     end
 })
+local Terrain = workspace.Terrain
 
+box:AddToggle("WaterToggle", {
+    Text = "Water System",
+    Default = false,
+    Callback = function(Value)
+
+        local center = Vector3.new(100.54, -100.85, 100.34)
+        local sizeX = 4000
+        local sizeZ = 4000
+        local height = 180
+
+        if Value then
+
+            -- Cria o oceano
+            Terrain:FillBlock(
+                CFrame.new(center),
+                Vector3.new(sizeX, height, sizeZ),
+                Enum.Material.Water
+            )
+
+            local function RemoveWater(startPos, endPos)
+                local centerPos = (startPos + endPos) / 2
+
+                local size = Vector3.new(
+                    math.abs(endPos.X - startPos.X) + 10,
+                    math.abs(endPos.Y - startPos.Y) + 10,
+                    math.abs(endPos.Z - startPos.Z) + 10
+                )
+
+                Terrain:FillBlock(
+                    CFrame.new(centerPos),
+                    size,
+                    Enum.Material.Air
+                )
+            end
+
+            -- Áreas sem água
+            RemoveWater(Vector3.new(67.64, -8.62, 204.86), Vector3.new(64.61, -68.77, 319.71))
+            RemoveWater(Vector3.new(-142.60, -11.10, -43.67), Vector3.new(-67.13, -10.54, 33.32))
+            RemoveWater(Vector3.new(143.00, -9.61, 264.90), Vector3.new(164.51, -56.49, 313.10))
+            RemoveWater(Vector3.new(52.53, -11.15, 210.08), Vector3.new(52.69, -13.09, 329.59))
+            RemoveWater(Vector3.new(124.46, -10.48, 314.90), Vector3.new(16.14, -9.97, 222.29))
+            RemoveWater(Vector3.new(12.10, -14.47, 219.33), Vector3.new(125.13, -15.61, 306.55))
+            RemoveWater(Vector3.new(-20, -100, 150), Vector3.new(180, 50, 360))
+
+        else
+
+            -- Remove todo o oceano
+            Terrain:FillBlock(
+                CFrame.new(center),
+                Vector3.new(sizeX, height, sizeZ),
+                Enum.Material.Air
+            )
+
+        end
+    end
+})
+
+local ponte -- referência global do modelo
+
+box:AddToggle("Ponte Toggle", {
+    Text = "Ponte Toggle",
+    Default = false,
+
+    Callback = function(Value)
+
+        -- LIGA
+        if Value then
+            -- evita duplicar ponte
+            if ponte then
+                ponte:Destroy()
+            end
+
+            ponte = Instance.new("Model")
+            ponte.Name = "Ponte"
+            ponte.Parent = workspace
+
+            local inicio = Vector3.new(-913.53, -9.22, 17.08)
+            local comprimento = 120
+            local espacamento = 10
+
+            for i = 0, math.floor(comprimento / espacamento) do
+                local x = i * espacamento
+
+                -- Piso
+                local piso = Instance.new("Part")
+                piso.Size = Vector3.new(espacamento, 1, 8)
+                piso.Position = inicio + Vector3.new(x, 0, 0)
+                piso.Anchored = true
+                piso.Material = Enum.Material.WoodPlanks
+                piso.Color = Color3.fromRGB(55, 35, 20)
+                piso.Parent = ponte
+
+                -- Pilar esquerdo
+                local p1 = Instance.new("Part")
+                p1.Size = Vector3.new(1, 6, 1)
+                p1.Position = piso.Position + Vector3.new(0, -3.5, -3)
+                p1.Anchored = true
+                p1.Material = Enum.Material.Wood
+                p1.Color = piso.Color
+                p1.Parent = ponte
+
+                -- Pilar direito
+                local p2 = p1:Clone()
+                p2.Position = piso.Position + Vector3.new(0, -3.5, 3)
+                p2.Parent = ponte
+
+                -- Corrimão esquerdo
+                local c1 = Instance.new("Part")
+                c1.Size = Vector3.new(espacamento, 0.3, 0.3)
+                c1.Position = piso.Position + Vector3.new(0, 2, -3)
+                c1.Anchored = true
+                c1.Material = Enum.Material.Wood
+                c1.Color = piso.Color
+                c1.Parent = ponte
+
+                -- Corrimão direito
+                local c2 = c1:Clone()
+                c2.Position = piso.Position + Vector3.new(0, 2, 3)
+                c2.Parent = ponte
+            end
+
+        -- DESLIGA
+        else
+            if ponte then
+                ponte:Destroy()
+                ponte = nil
+            end
+        end
+    end
+})
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+local mouse = player:GetMouse()
+
+local maxDistance = 20
+
+-- pega partes perto do mouse
+local function getNearbyParts(position)
+    local parts = {}
+
+    for _, obj in pairs(workspace:GetDescendants()) do
+        if obj:IsA("BasePart") and not obj.Anchored then
+            if (obj.Position - position).Magnitude <= maxDistance then
+                table.insert(parts, obj)
+            end
+        end
+    end
+
+    return parts
+end
+
+-- junta as partes
+local function weldParts(parts)
+    if #parts < 2 then return end
+
+    local main = parts[1]
+
+    for i = 2, #parts do
+        local weld = Instance.new("WeldConstraint")
+        weld.Part0 = main
+        weld.Part1 = parts[i]
+        weld.Parent = main
+    end
+end
+
+-- 🔥 BOTÃO JUNÇÃO
+box:AddButton({
+    Text = "Junção",
+    Callback = function()
+        local targetPos = mouse.Hit.Position
+        local parts = getNearbyParts(targetPos)
+
+        weldParts(parts)
+    end
+})
+
+-- ⚡ BOTÃO VELOCIDADE
+box:AddButton({
+    Text = "Velocidade 100",
+    Callback = function()
+        local character = player.Character or player.CharacterAdded:Wait()
+        local humanoid = character:FindFirstChildOfClass("Humanoid")
+
+        if humanoid then
+            humanoid.WalkSpeed = 100
+        end
+    end
+})
 
 
 
@@ -810,8 +1003,6 @@ local function playKickSound()
 	s.Parent = SoundService
 	s:Destroy()
 end
-
-
 
 
 do
@@ -837,6 +1028,7 @@ box:AddToggle("AntiGrab",{
         end
     end
 })
+
 
 
 
